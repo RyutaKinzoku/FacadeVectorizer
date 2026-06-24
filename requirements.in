@@ -1,0 +1,11 @@
+# Runtime dependencies — shipped inside the frozen app / installer.
+# This is the SOURCE list; requirements.txt is the locked/pinned output
+# generated from this file with `pip-compile requirements.in`.
+
+PySide6                  # GUI (LGPL) — also provides the Qt translation system for i18n
+opencv-contrib-python    # classic CV: rectification, FastLineDetector, Canny, etc.
+onnxruntime               # offline inference for learned edge/segmentation models (.onnx only)
+Pillow                   # image I/O, decompression-bomb guard (MAX_IMAGE_PIXELS)
+numpy                    # array operations underlying OpenCV / geometry code
+shapely                  # line merging, snapping, simplification for vectorisation
+ezdxf                    # layered DXF export for AutoCAD / Rhino

@@ -1,0 +1,10 @@
+# Development / tooling dependencies — NEVER shipped in the installer.
+# Training (PyTorch), testing, linting, security scanning, and packaging tools live here.
+
+pytest
+pytest-qt
+ruff
+mypy
+pip-audit
+pip-tools
+pyinstaller
