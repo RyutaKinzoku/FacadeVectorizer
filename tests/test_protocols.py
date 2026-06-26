@@ -54,9 +54,9 @@ class FakeStageImplementation:
         return image
 
     def calibrate(
-        self, pixel_start: Point, pixel_end: Point, known_length: float
+        self, pixel_start: Point, pixel_end: Point, known_length: float, unit: LengthUnit
     ) -> ScaleCalibration:
-        return ScaleCalibration(pixel_start, pixel_end, known_length, LengthUnit.METRE)
+        return ScaleCalibration(pixel_start, pixel_end, known_length, unit)
 
     def detect(self, image: ImageArray) -> list[LineSegment]:
         return []
@@ -95,7 +95,9 @@ def test_fake_satisfies_every_stage_protocol() -> None:
 
 def test_fake_calibrate_round_trips_through_the_real_value_object() -> None:
     fake = FakeStageImplementation()
-    calibration = fake.calibrate(Point(0, 0), Point(0, 200), known_length=2.0)
+    calibration = fake.calibrate(
+        Point(0, 0), Point(0, 200), known_length=2.0, unit=LengthUnit.METRE
+    )
     assert calibration.pixels_per_unit > 0
 
 

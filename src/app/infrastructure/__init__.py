@@ -6,6 +6,9 @@ Sub-packages:
     ml/            onnxruntime adapters — model loading + SHA-256 verification.
     export/        PNG and ezdxf exporters.
     persistence/   project (photo + calibration + edits + settings) repository.
+    calibration/   ScaleCalibrator implementation(s) — no third-party library
+                   to adapt here, but kept alongside the others so every
+                   Protocol implementation lives in one place.
 
 Each adapter implements a Protocol defined in `app.application` (Dependency
 Inversion) so the rest of the codebase never imports cv2 / onnxruntime /

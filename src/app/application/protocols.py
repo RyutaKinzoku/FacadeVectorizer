@@ -29,6 +29,7 @@ from app.domain.calibration import ScaleCalibration
 from app.domain.drawing import DrawingModel
 from app.domain.geometry import LineSegment, Point
 from app.domain.stroke import Stroke
+from app.domain.units import LengthUnit
 
 
 @runtime_checkable
@@ -71,7 +72,7 @@ class ScaleCalibrator(Protocol):
     """Stage 4 — turn one known real-world dimension into a ScaleCalibration."""
 
     def calibrate(
-        self, pixel_start: Point, pixel_end: Point, known_length: float
+        self, pixel_start: Point, pixel_end: Point, known_length: float, unit: LengthUnit
     ) -> ScaleCalibration: ...
 
 
