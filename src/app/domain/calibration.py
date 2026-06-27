@@ -40,3 +40,18 @@ class ScaleCalibration:
     def to_real_length(self, pixel_distance: float) -> float:
         """Convert a pixel distance to real-world length, in `self.unit`."""
         return pixel_distance / self.pixels_per_unit
+
+    def to_real_point(self, pixel_point: Point) -> Point:
+        """Convert a pixel-space point to a real-world-unit point.
+
+        Scales both axes by the same pixels_per_unit, assuming the
+        isotropic scale a properly rectified, fronto-parallel image
+        should have — even though the calibration measurement itself was
+        only taken along one axis. Same assumption Vectorizer already
+        documented; this method exists so that assumption lives in one
+        place instead of being re-implemented at each call site (the
+        orchestrator needs this exact operation too, applied to already-
+        regularized Strokes, not just at Vectorizer's own call site).
+        """
+        scale = self.pixels_per_unit
+        return Point(x=pixel_point.x / scale, y=pixel_point.y / scale)

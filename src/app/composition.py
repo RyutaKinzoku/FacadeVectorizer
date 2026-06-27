@@ -5,39 +5,49 @@ and wire them to the Protocols defined in `app.application`. Nothing else
 in the codebase should construct an OpenCV/onnxruntime/ezdxf adapter
 directly — ask the composition root for one instead.
 
-Progress so far: every Protocol except Preprocessor and FacadeSegmenter
-now has a concrete adapter (app.infrastructure.io.image_validator.
-PillowImageValidator, app.infrastructure.calibration.scale_calibrator.
-SingleMeasurementScaleCalibrator, app.infrastructure.vision.rectifier.
-ManualCornerRectifier, app.infrastructure.vision.edge_detector.
-CannyFastLineEdgeDetector, app.infrastructure.vectorization.vectorizer.
-SingleLayerVectorizer, app.infrastructure.regularization.regularizer.
-OrthoSnapMergeRegularizer, app.infrastructure.export.png_exporter.
-PreviewPngExporter, app.infrastructure.export.dxf_exporter.DxfExporter).
+build_pipeline() now returns a real, working PhotoToCadPipeline (see
+app.application.pipeline) wired from the 7 of 9 Protocols that have
+concrete adapters today: ImageValidator (PillowImageValidator), Rectifier
+(ManualCornerRectifier — manual corners only, no automatic vanishing-point
+mode yet), EdgeDetector (CannyFastLineEdgeDetector), Vectorizer
+(SingleLayerVectorizer), GeometryRegularizer (OrthoSnapMergeRegularizer),
+ScaleCalibrator (SingleMeasurementScaleCalibrator), and DrawingExporter
+(PreviewPngExporter + DxfExporter — the one Protocol with two adapters).
+
 Preprocessor (denoise/contrast/undistort, folded informally into
 EdgeDetector's own bilateral filter for now) and FacadeSegmenter (Phase 3,
-needs a real model) are the two still missing. Real wiring in
-build_pipeline() below is the natural next step — see docs/architecture.md
-roadmap.
-
-Ordering constraint for whoever writes that wiring, discovered while
-validating OrthoSnapMergeRegularizer against the real photo (see its own
-docstring): GeometryRegularizer's tolerances are pixel-scale, so it must
-run on Vectorizer's output BEFORE any ScaleCalibration has been applied
-— calibrating first turns "15 pixels" into "15 metres" and silently
-wrecks the merge step. Call order: Vectorizer(calibration=None) ->
-GeometryRegularizer -> (scale applied separately, downstream, whenever
-that step exists).
+needs a real model) still don't exist, so the pipeline this assembles
+doesn't call them — see PhotoToCadPipeline's own docstring. Adding either
+later means adding a constructor parameter here and to PhotoToCadPipeline
+itself, not restructuring anything.
 """
 
 from __future__ import annotations
 
+from app.application.pipeline import PhotoToCadPipeline
+from app.infrastructure.calibration.scale_calibrator import SingleMeasurementScaleCalibrator
+from app.infrastructure.export.dxf_exporter import DxfExporter
+from app.infrastructure.export.png_exporter import PreviewPngExporter
+from app.infrastructure.io.image_validator import PillowImageValidator
+from app.infrastructure.regularization.regularizer import OrthoSnapMergeRegularizer
+from app.infrastructure.vectorization.vectorizer import SingleLayerVectorizer
+from app.infrastructure.vision.edge_detector import CannyFastLineEdgeDetector
+from app.infrastructure.vision.rectifier import ManualCornerRectifier
 
-def build_pipeline() -> None:
-    """Assemble and return the configured processing pipeline.
 
-    Placeholder — will return an `application.Pipeline` built from
-    concrete `infrastructure` adapters once enough stage Protocols have
-    implementations for that to be meaningful.
+def build_pipeline() -> PhotoToCadPipeline:
+    """Assemble the real, working pipeline from concrete infrastructure
+    adapters. This is the ONLY function in the codebase that imports
+    these concrete classes directly — everywhere else depends on the
+    Protocols in app.application.protocols instead (Dependency Inversion).
     """
-    raise NotImplementedError("Pipeline assembly lands once more stages have adapters.")
+    return PhotoToCadPipeline(
+        image_validator=PillowImageValidator(),
+        rectifier=ManualCornerRectifier(),
+        edge_detector=CannyFastLineEdgeDetector(),
+        vectorizer=SingleLayerVectorizer(),
+        scale_calibrator=SingleMeasurementScaleCalibrator(),
+        png_exporter=PreviewPngExporter(),
+        dxf_exporter=DxfExporter(),
+        regularizer=OrthoSnapMergeRegularizer(),
+    )

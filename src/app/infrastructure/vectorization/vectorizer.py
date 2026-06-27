@@ -21,13 +21,19 @@ score, and inventing a number wouldn't be a real confidence signal, just
 a fake one. A future stage with an actual score (a segmentation model's
 class probability, or a regularizer's merge quality) should set it for
 real, not this one.
+
+Scaling: delegates to ScaleCalibration.to_real_point rather than
+re-deriving "divide by pixels_per_unit" here — see that method's
+docstring for why it lives in the domain object instead of this adapter
+(the orchestrator needs the exact same operation applied to already-
+regularized Strokes, not just at this call site).
 """
 
 from __future__ import annotations
 
 from app.application.types import ImageArray
 from app.domain.calibration import ScaleCalibration
-from app.domain.geometry import LineSegment, Point, Polyline
+from app.domain.geometry import LineSegment, Polyline
 from app.domain.layer import LayerKind
 from app.domain.stroke import Stroke
 
@@ -55,17 +61,6 @@ class SingleLayerVectorizer:
     def _to_polyline(segment: LineSegment, calibration: ScaleCalibration | None) -> Polyline:
         start, end = segment.start, segment.end
         if calibration is not None:
-            start = SingleLayerVectorizer._to_real_units(start, calibration)
-            end = SingleLayerVectorizer._to_real_units(end, calibration)
+            start = calibration.to_real_point(start)
+            end = calibration.to_real_point(end)
         return Polyline(points=(start, end))
-
-    @staticmethod
-    def _to_real_units(point: Point, calibration: ScaleCalibration) -> Point:
-        """Scales a pixel-space point into the calibration's real-world
-        unit, assuming the uniform (isotropic) scale a fronto-parallel
-        rectified image should have — the same pixels_per_unit applies to
-        both axes, even though the calibration measurement itself was
-        only taken along one of them.
-        """
-        scale = calibration.pixels_per_unit
-        return Point(x=point.x / scale, y=point.y / scale)

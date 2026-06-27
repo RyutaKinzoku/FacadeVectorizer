@@ -70,6 +70,18 @@ class TestScaleCalibration:
         # 100 px at 100 px/m -> 1.0 m.
         assert calibration.to_real_length(100.0) == pytest.approx(1.0)
 
+    def test_to_real_point_scales_both_axes_uniformly(self) -> None:
+        calibration = ScaleCalibration(
+            pixel_start=Point(0, 0),
+            pixel_end=Point(0, 100),
+            known_length=1.0,
+            unit=LengthUnit.METRE,
+        )
+        # 100 px/m: a pixel point of (100, 200) should become (1.0, 2.0).
+        result = calibration.to_real_point(Point(100, 200))
+        assert result.x == pytest.approx(1.0)
+        assert result.y == pytest.approx(2.0)
+
     def test_rejects_non_positive_known_length(self) -> None:
         with pytest.raises(ValueError, match="positive"):
             ScaleCalibration(Point(0, 0), Point(0, 200), known_length=0, unit=LengthUnit.METRE)
