@@ -62,6 +62,8 @@ class TestExportsAnOpenablePng:
 
         small_image = cv2.imread(str(small_path))
         large_image = cv2.imread(str(large_path))
+        assert small_image is not None
+        assert large_image is not None
         assert small_image.shape == large_image.shape
 
 

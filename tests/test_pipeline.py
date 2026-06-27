@@ -1,14 +1,12 @@
 """Tests for PhotoToCadPipeline.
 
-ImageValidator, Rectifier, and EdgeDetector are faked here -- their own
-correctness (real image decoding, real perspective warps, real cv2 edge
-detection) is already covered in their own dedicated test files, and
-faking them lets these tests control exactly what flows into the rest of
-the pipeline with an exact, deterministic input. Vectorizer,
-GeometryRegularizer, ScaleCalibrator, and both exporters are the REAL
-implementations: the point of testing an orchestrator is verifying the
-real pieces actually chain together correctly -- including the ordering
-constraint documented in both PhotoToCadPipeline's and
+ImageValidator, Rectifier, and EdgeDetector are faked (see tests/fakes.py
+for why and for what each fake does) so these tests control exactly what
+flows into the rest of the pipeline with an exact, deterministic input.
+Vectorizer, GeometryRegularizer, ScaleCalibrator, and both exporters are
+the REAL implementations: the point of testing an orchestrator is
+verifying the real pieces actually chain together correctly -- including
+the ordering constraint documented in both PhotoToCadPipeline's and
 OrthoSnapMergeRegularizer's docstrings -- not re-mocking everything into
 isolation.
 """
@@ -17,7 +15,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import numpy as np
 import pytest
 
 from app.application.pipeline import PhotoToCadPipeline
@@ -28,29 +25,7 @@ from app.infrastructure.export.dxf_exporter import DxfExporter
 from app.infrastructure.export.png_exporter import PreviewPngExporter
 from app.infrastructure.regularization.regularizer import OrthoSnapMergeRegularizer
 from app.infrastructure.vectorization.vectorizer import SingleLayerVectorizer
-
-
-class FakeImageValidator:
-    def validate(self, path: str) -> np.ndarray:
-        return np.zeros((100, 100, 3), dtype=np.uint8)
-
-
-class FakeRectifier:
-    def rectify(self, image: np.ndarray, manual_corners: object = None) -> np.ndarray:
-        return image  # pass through -- orchestration tests don't need real warps
-
-
-class FakeEdgeDetector:
-    """Returns a fixed, known set of segments so these tests are exact
-    and deterministic, instead of depending on real cv2 detection.
-    """
-
-    def __init__(self, segments: list[LineSegment]) -> None:
-        self._segments = segments
-
-    def detect(self, image: np.ndarray) -> list[LineSegment]:
-        return self._segments
-
+from tests.fakes import FakeEdgeDetector, FakeImageValidator, FakeRectifier
 
 SOME_CORNERS = (Point(0, 0), Point(99, 0), Point(99, 99), Point(0, 99))
 

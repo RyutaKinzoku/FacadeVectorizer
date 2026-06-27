@@ -12,6 +12,7 @@ from pathlib import Path
 
 import ezdxf
 import pytest
+from ezdxf.entities import LWPolyline
 
 from app.application.protocols import DrawingExporter
 from app.domain.drawing import DrawingModel
@@ -73,6 +74,7 @@ class TestFlipsYForCadConvention:
 
         document = ezdxf.readfile(str(path))
         (entity,) = list(document.modelspace())
+        assert isinstance(entity, LWPolyline)
         cad_points = list(entity.get_points())
         cad_ys = [point[1] for point in cad_points]
 
