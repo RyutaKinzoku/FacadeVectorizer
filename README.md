@@ -76,44 +76,70 @@ pip-compile requirements.in -o requirements.txt
 pip-compile requirements-dev.in -o requirements-dev.txt
 ```
 
-## Packaging (building the Windows installer)
+## Packaging (sharing a build with someone else)
 
-**This only produces a real, shippable Windows build when run on an
+**This only produces a real, runnable Windows build when run on an
 actual Windows machine.** PyInstaller packages for whatever OS it's
-running on — it does not cross-compile — and Inno Setup is Windows-only
-software entirely. If you're reading this from a non-Windows dev
-environment, `pyinstaller packaging/app.spec` will still run and is
-useful for validating the spec itself (it's how this spec was developed
-and tested), but the resulting binary won't run on Windows.
+running on — it does not cross-compile. If you're building from a
+non-Windows dev environment, `pyinstaller packaging/app.spec` will still
+run and is useful for validating the spec itself (it's how this spec was
+developed and tested), but the resulting binary won't run on Windows.
+
+### The simple path: sharing with one or two people
+
+You don't need an installer or a code-signing certificate just to hand
+this to a colleague.
 
 **1. Freeze the app:**
 
 ```powershell
-pyinstaller packaging\app.spec --distpath packaging\dist --workpath packaging\build
+pyinstaller packaging\app.spec --distpath packaging\dist --workpath packaging\build --noconfirm
 ```
 
-Produces `packaging\dist\PhotoToCAD\` (the exe plus an `_internal\`
-folder with the Qt runtime, DLLs, and the bundled `i18n\`/`models\`
-data). Smoke-test it before going further: run
-`packaging\dist\PhotoToCAD\PhotoToCAD.exe` directly and confirm the
-window opens and a real photo produces real output.
+Produces `packaging\dist\PhotoToCAD\` — `PhotoToCAD.exe` plus an
+`_internal\` folder containing the Qt runtime, OpenCV, the Python
+interpreter, and the bundled `i18n\`/`models\` data. The person you send
+this to needs nothing else installed; everything is in that folder.
+Smoke-test it yourself first: run `PhotoToCAD.exe` directly and confirm
+the window opens and a real photo produces real output.
 
-**2. Compile the installer:**
+**2. Zip the whole `PhotoToCAD` folder** (not just the `.exe` — it needs
+`_internal` sitting next to it) and send the zip. Expect a few hundred MB
+compressed; use a file-transfer link (WeTransfer, Drive, OneDrive) rather
+than email if there's a size limit.
 
-Open `packaging\installer.iss` in the Inno Setup IDE (or run `ISCC.exe
-packaging\installer.iss`). Produces
-`packaging\installer_output\PhotoToCAD-Setup-<version>.exe`.
+**3. What the other person will see:** the first time they double-click
+`PhotoToCAD.exe`, Windows will very likely show *"Windows protected your
+PC — Microsoft Defender SmartScreen prevented an unrecognized app from
+starting."* This is normal for any fresh, unsigned executable — it isn't
+a sign anything is broken. They click **More info → Run anyway** once;
+Windows remembers after that. Worth telling them in advance so it doesn't
+look alarming.
 
-**3. Sign both executables:**
+### The fuller path: a proper installer, for broader distribution
 
-```powershell
-powershell -ExecutionPolicy Bypass -File packaging\sign.ps1
-```
+If you're distributing this beyond a handful of people, or the
+SmartScreen prompt above is a dealbreaker, there's a real Inno Setup
+installer and a signing script already written:
 
-Fill in your actual certificate path/password in the script first — see
-its own header comment. Without this step, expect Windows SmartScreen
-and antivirus false positives; PyInstaller binaries attract both purely
-for being unsigned.
+- **Compile the installer:** open `packaging\installer.iss` in the Inno
+  Setup IDE (or run `ISCC.exe packaging\installer.iss`). Produces
+  `packaging\installer_output\PhotoToCAD-Setup-<version>.exe` with a
+  Start Menu entry, optional desktop shortcut, and uninstaller.
+- **Sign both executables:** `powershell -ExecutionPolicy Bypass -File
+  packaging\sign.ps1`, after filling in your actual certificate
+  path/password (see the script's own header comment). Note that as of
+  a 2024 SmartScreen policy change, signing — even with a paid EV
+  certificate — no longer grants instant trust; reputation still builds
+  via download volume either way. Signing mainly helps by turning a hard
+  SmartScreen block into a one-click-through warning, and by giving
+  antivirus engines a stable publisher identity to whitelist instead of
+  a new file hash on every build. If you want zero SmartScreen friction
+  from day one without buying a certificate, look into
+  [Microsoft Trusted Signing](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/code-signing-options)
+  (~$10/month, individual developers in the US/Canada) or
+  [SignPath Foundation](https://signpath.org/) (free for qualifying open
+  source projects).
 
 ## Project layout
 
@@ -134,4 +160,4 @@ docs/               architecture.md and future ADRs
 
 ## License
 
-TBD.
+MIT — see [`LICENSE`](LICENSE).

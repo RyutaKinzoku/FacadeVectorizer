@@ -3,6 +3,7 @@ name = "photo-to-cad"
 version = "0.1.0"
 description = "Convert a single building photograph into a scaled, layered vector elevation drawing (PNG + DXF) for CAD cleanup, fully offline."
 readme = "README.md"
+license = "MIT"
 requires-python = ">=3.12"
 
 [build-system]
